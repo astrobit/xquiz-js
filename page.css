@@ -1,0 +1,41 @@
+button{
+    height:20px; 
+    width:100px; 
+    margin: -20px -50px; 
+    top:50%; 
+    left:50%;
+}
+div{
+    text-align:center;
+}
+
+
+.ref{
+		color: red;
+}
+
+.numref{
+		color: red;
+}
+.equation{
+}
+
+summary{
+	text-align: left;
+	width:100%;
+}
+details{
+  margin-left: 2em;
+	width:80%;
+	max-width:80vw;
+}
+summary{
+	background-color: lightgray;
+	width:100%;
+	max-width:80vw;
+}
+
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
