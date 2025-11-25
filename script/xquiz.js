@@ -1,3 +1,166 @@
+class TokenElement
+{
+	constructor(element)
+	{
+		this.inner = new Array();
+		this.nodeType = null;
+		if (element != null && element != undefined)
+		{
+			if (element instanceof HTMLCollection || element instanceof Element)
+			{
+				if (element.tagName == "#PCDATA")
+					console.log(element);
+				this.nodeType = element.tagName;
+				for (let index = 0; index < element.attributes.length; index++)
+				{
+					const attrib = element.attributes[index];
+					this[attrib.name] = attrib.value;
+				}
+				for (let index = 0; index < element.childNodes.length; index++)
+				{
+					const child = element.childNodes[index];
+					if (child instanceof Text)
+					{
+						let value = child.nodeValue.trim();
+						if (value != "")
+						{
+							this.inner.push(new TokenElement(child));
+						}
+					}
+					else
+					{
+						this.inner.push(new TokenElement(child));
+					}
+				}
+				this.sourceElement = element;
+			}
+			else if (element instanceof Text)
+			{
+				this.nodeType = "#PCDATA";
+				this.value = element.nodeValue.trim();
+				this.sourceElement = element;
+			}
+		}
+	}
+}
+
+class InstanceData
+{
+}
+
+class variableInstance
+{
+	constructor(element)
+	{
+		this.id = element.id;
+		this.min = element.min;
+		this.max = element.max;
+		this.functiontype = element.functiontype;
+		this.precision = element.precision;
+		this.stdev = element.stdev;
+		this.requirescientific = element.requirescientific;
+		
+		let value = (this.max + this.min) * 0.5;
+		if (this.functiontype == "gaussian")
+		{
+			value = random_gaussian((this.max + this.min) * 0.5,this.stdev);
+		}			
+		else if (this.functiontype == "tophat")
+		{
+			value = (this.max - this.min) * Math.random() + this.min;
+		}
+		let rndValue = Math.pow(10.0,-this.precision);
+		this.value = Math.round(value / rndValue) * rndValue;
+		let log_value = Math.log10(Math.abs(this.value));
+		if (this.requirescientific || Math.abs(log_value) >= 3.0)
+		{
+			this.serialLaTeX = serializeLaTeXscientific(this.value,this.precision)
+		}
+		else
+		{
+			this.serialLaTeX = this.value.toFixed(Math.max(0,this.precision));
+		}
+	}
+	serializeLatex()
+	{
+		return this.serialLaTeX;		
+	}
+}
+class calculation
+{
+	constructor(element)
+	{
+		this.id = element.id;
+		this.inner = element.inner;
+		this.value = null;
+		this.precision = element.precision;
+	}
+	resetValue()
+	{
+		this.value = null;
+	}
+	calculate(instancedata,force)
+	{
+		if (this.value == null || force)
+		{
+			let calcstring = new String();
+			inner.forEach(function (element, index) {
+				if (element.nodeType == '#PCDATA')
+				{
+					calcstring += element.value;
+				}
+				else if (element.nodeType == 'varref')
+				{
+					let variable = instance.data[element.id];
+					calcstring += variable.value;
+				}
+				else if (element.nodeType == 'calcref')
+				{
+					if (element.id != this.id)
+					{
+						error.log ("self referening calculaiton " + this.id);
+					}
+					else
+					{
+						let calculation = instance.data[element.id];
+						
+						calcstring += calculation.calculate();
+					}
+				}
+			});
+			this.value = math.evaluate(calcstring.toString());
+			if (this.requirescientific || Math.abs(log_value) >= 3.0)
+			{
+				this.serialLaTeX = serializeLaTeXscientific(this.value,this.precision)
+			}
+			else
+			{
+				this.serialLaTeX = this.value.toFixed(Math.max(0,this.precision));
+			}
+		}
+		return this.value;
+	}
+	serializeLatex()
+	{
+		return this.serialLaTeX;		
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// function to interpret a variable that may contain a number as a string to a number
+////////////////////////////////////////////////////////////////////////////////
+
+function varToNumber(data)
+{
+	let out = null;
+	if (typeof data == "number")
+		out = data;
+	else if ((typeof data == "string") || (data instanceof String))
+		out = Number(data);
+	return out;
+	
+}
+
 
 
 class answer
@@ -6,7 +169,7 @@ class answer
 	{
 		this.bCorrect = false;
 		this.bIs_Scramblable = true;
-		this.sText = new String();
+		this.vInner = new Array();
 		this.sID = new String();
 		if (xmlTree != null && xmlTree !== undefined)
 			this.Read_XML(xmlTree);
@@ -14,25 +177,24 @@ class answer
 	
 	Read_XML (i_lpRoot_Element)
 	{
-		if (i_lpRoot_Element != null && i_lpRoot_Element.tagname == "choice")
+		let element = new tokencomponent(i_lpRoot_Element);
+		if (element.nodeType == "choice")
 		{
-			this.sText = i_lpRoot_Element.innerText;
-			i_lpRoot_Element.attributes.forEach(function (attribute, index) {
-				if (attribute.name == "id")
-				{
-					this.sID = String(attribute.value);
-				}
-				else if (attribute.name == "scramble")
-				{
-					this.bIs_Scramblable = attribute.value == "true";
-
-				}
-				else if (attribute.name == "correct")
-				{
-					this.bCorrect = attribute.value == "true";
-				}
-			});
+			this.vInner = element.inner;
+			this.sID = String(element.id);
+			this.bIs_Scramblable = element.scramble == "true";
+			this.bCorrect = element.correct == "true";
 		}
+	}
+	
+	serializeLaTeX()
+	{
+		let out = new String();
+		if (bCorrect)
+			out += "\\CorrectChoice";
+		else
+			out += "\\Choice";
+		
 	}
 
 }
