@@ -8,7 +8,7 @@ function handleFilesBank()
 //	const fileList = this.files; /* now you can work with the file list */
 	for (const file of this.files)
 	{
-		readBank(file);
+		readFile(file);
 	}
 }
 
