@@ -416,108 +416,111 @@ function addKeyEvent(event)
 function createQuestion(element)
 {
 	let elemDetails = createElement("details", {id: element.id + "-details"});
+	let summaryText = (element.nodeType == "question" ? "Question: " : "Part:") + element.id
+	if (element.nodeType == "question")
+		summaryText += " keys: " + element.keys
 
-	let elemNew = createElement("summary", {id: element.id + "-details-summary", innerText: "Question: " + element.id + " keys: " + element.keys});
+	let elemNew = createElement("summary", {id: element.id + "-details-summary", innerText: summaryText});
 	elemDetails.appendChild(elemNew);
+	if (element.nodeType == "question")
+	{
+		let attribsTable = createTable(element.id + "-attribs" ,["ID", "Difficulty", "Time Required"], [[element.id, stringNullUndef(element.difficulty), stringNullUndef(element.timerequired)]]);
+		elemDetails.appendChild(attribsTable);
 
-
-	let attribsTable = createTable(element.id + "-attribs" ,["ID", "Difficulty", "Time Required"], [[element.id, stringNullUndef(element.difficulty), stringNullUndef(element.timerequired)]]);
-	elemDetails.appendChild(attribsTable);
-
-	elemDetails.appendChild(document.createElement("br"));
+		elemDetails.appendChild(document.createElement("br"));
 
 ////////////////////////////////////////////////////
 // edit section for keys
-	let elemKeysDetails = createElement("details", {id: element.id + "-keys-details"});
-	elemNew = createElement("summary", {id: element.id + "-keys-details-summary", innerText: "Keys"});
-	elemKeysDetails.appendChild(elemNew);
+		let elemKeysDetails = createElement("details", {id: element.id + "-keys-details"});
+		elemNew = createElement("summary", {id: element.id + "-keys-details-summary", innerText: "Keys"});
+		elemKeysDetails.appendChild(elemNew);
+		
+		if (element.keys !== null && element.keys !== undefined)
+		{
+			let keys = element.keys.split(",");
+			let keysTable = createTable(element.id + "-keys" ,["Key"], keys);
+			elemKeysDetails.appendChild(keysTable);
+		}
+		
+		elemNew = createElement("button",{id: element.id + "-key-add", idref: element.id, srcElem: element, "class": "addButton", value: "Add Key", innerText: "Add Key"});
+		elemNew.addEventListener("click",addKeyEvent);
+		elemKeysDetails.appendChild(document.createElement("br"));
 	
-	if (element.keys !== null && element.keys !== undefined)
-	{
-		let keys = element.keys.split(",");
-		let keysTable = createTable(element.id + "-keys" ,["Key"], keys);
-		elemKeysDetails.appendChild(keysTable);
-	}
-	
-	elemNew = createElement("button",{id: element.id + "-key-add", idref: element.id, srcElem: element, "class": "addButton", value: "Add Key", innerText: "Add Key"});
-	elemNew.addEventListener("click",addKeyEvent);
-	elemKeysDetails.appendChild(document.createElement("br"));
-	
-	elemDetails.appendChild(elemKeysDetails);
-
+		elemDetails.appendChild(elemKeysDetails);
 	// group constants together
-	let constants = [];
-	element.inner.forEach(function (childElement, childIndex) {
-		if (childElement.nodeType == "constant")
+		let constants = [];
+		element.inner.forEach(function (childElement, childIndex) {
+			if (childElement.nodeType == "constant")
+			{
+				constants.push(childElement);
+			}
+		});
+		if (constants.length > 0)
 		{
-			constants.push(childElement);
+			let elemConstantsDetails = createElement("details", {id: element.id + "-constants-details"});
+			let elemConstantsSummary = createElement("summary", {id: element.id + "-constants-details-summary", innerText:"Constants"});
+			elemConstantsDetails.appendChild(elemConstantsSummary);
+			
+			let tableRows = [];
+			constants.forEach( function (constant) {
+					tableRows.push([constant.id, constant.value]);
+				});
+			let elemTable = createTable(element.id + "-constants-details-table", ["ID", "Value"], tableRows);
+			elemConstantsDetails.appendChild(elemTable);
+			elemDetails.appendChild(elemConstantsDetails);
 		}
-	});
-	if (constants.length > 0)
-	{
-		let elemConstantsDetails = createElement("details", {id: element.id + "-constants-details"});
-		let elemConstantsSummary = createElement("summary", {id: element.id + "-constants-details-summary", innerText:"Constants"});
-		elemConstantsDetails.appendChild(elemConstantsSummary);
+		//@@TODO else still allow adding constants
 		
-		let tableRows = [];
-		constants.forEach( function (constant) {
-				tableRows.push([constant.id, constant.value]);
-			});
-		let elemTable = createTable(element.id + "-constants-details-table", ["ID", "Value"], tableRows);
-		elemConstantsDetails.appendChild(elemTable);
-		elemDetails.appendChild(elemConstantsDetails);
-	}
-	//@@TODO else still allow adding constants
-	
-	// group variables together
-	let variables = [];
-	element.inner.forEach(function (childElement, childIndex) {
-		if (childElement.nodeType == "variable")
+		// group variables together
+		let variables = [];
+		element.inner.forEach(function (childElement, childIndex) {
+			if (childElement.nodeType == "variable")
+			{
+				variables.push(childElement);
+			}
+		});
+		if (variables.length > 0)
 		{
-			variables.push(childElement);
+			let elemConstantsDetails = createElement("details", {id: element.id + "-variables-details"});
+			let elemConstantsSummary = createElement("summary", {id: element.id + "-variables-details-summary", innerText:"Variables"});
+			elemConstantsDetails.appendChild(elemConstantsSummary);
+			
+			let tableRows = [];
+			variables.forEach( function (variable) {
+					tableRows.push([variable.id, variable.min, variable.max, variable.round, stringNullUndef(variable.dist), stringNullUndef(variable.units)]);
+				});
+			let elemTable = createTable(element.id + "-variables-details-table", ["ID", "Minimum", "Maximum", "Round To", "Distribution Type", "Units"], tableRows);
+			elemConstantsDetails.appendChild(elemTable);
+			elemDetails.appendChild(elemConstantsDetails);
 		}
-	});
-	if (variables.length > 0)
-	{
-		let elemConstantsDetails = createElement("details", {id: element.id + "-variables-details"});
-		let elemConstantsSummary = createElement("summary", {id: element.id + "-variables-details-summary", innerText:"Variables"});
-		elemConstantsDetails.appendChild(elemConstantsSummary);
-		
-		let tableRows = [];
-		variables.forEach( function (variable) {
-				tableRows.push([variable.id, variable.min, variable.max, variable.round, stringNullUndef(variable.dist), stringNullUndef(variable.units)]);
-			});
-		let elemTable = createTable(element.id + "-variables-details-table", ["ID", "Minimum", "Maximum", "Round To", "Distribution Type", "Units"], tableRows);
-		elemConstantsDetails.appendChild(elemTable);
-		elemDetails.appendChild(elemConstantsDetails);
-	}
-	//@@TODO else still allow adding variables
+		//@@TODO else still allow adding variables
 
-	// group variables together
-	let calculations = [];
-	element.inner.forEach(function (childElement, childIndex) {
-		if (childElement.nodeType == "calculation")
+		// group variables together
+		let calculations = [];
+		element.inner.forEach(function (childElement, childIndex) {
+			if (childElement.nodeType == "calculation")
+			{
+				calculations.push(childElement);
+			}
+		});
+		if (calculations.length > 0)
 		{
-			calculations.push(childElement);
+			let elemConstantsDetails = createElement("details", {id: element.id + "-calculations-details"});
+			let elemConstantsSummary = createElement("summary", {id: element.id + "-calculations-details-summary", innerText:"Calculations"});
+			elemConstantsDetails.appendChild(elemConstantsSummary);
+			
+			let tableRows = [];
+			calculations.forEach( function (calculation) {
+					tableRows.push([calculation.id, calculation.inner]);  // placeholder for calculation
+				});
+			let elemTable = createTable(element.id + "-calculations-details-table", ["ID", "Calculation"], tableRows);
+			elemConstantsDetails.appendChild(elemTable);
+			elemDetails.appendChild(elemConstantsDetails);
 		}
-	});
-	if (calculations.length > 0)
-	{
-		let elemConstantsDetails = createElement("details", {id: element.id + "-calculations-details"});
-		let elemConstantsSummary = createElement("summary", {id: element.id + "-calculations-details-summary", innerText:"Calculations"});
-		elemConstantsDetails.appendChild(elemConstantsSummary);
-		
-		let tableRows = [];
-		calculations.forEach( function (calculation) {
-				tableRows.push([calculation.id, calculation.inner]);  // placeholder for calculation
-			});
-		let elemTable = createTable(element.id + "-calculations-details-table", ["ID", "Calculation"], tableRows);
-		elemConstantsDetails.appendChild(elemTable);
-		elemDetails.appendChild(elemConstantsDetails);
+		//@@TODO else still allow adding variables
 	}
-	//@@TODO else still allow adding variables
 
-	// prompt and choices
+	// parts, prompt and choices
 	element.inner.forEach(function (childElement, childIndex) {
 		if (childElement.nodeType == "prompt")
 		{
@@ -529,6 +532,11 @@ function createQuestion(element)
 		{
 			let choices = createChoices(element.id, childElement);
 			elemDetails.appendChild(choices);
+		}
+		else if (childElement.nodeType == "part")
+		{
+			let part = createQuestion(childElement);
+			elemDetails.appendChild(part);
 		}
 
 	});
@@ -654,75 +662,3 @@ function  displayBank(id)
     });
 
 }
-let xsd_xquiz_HTML = null;
-let xsd_xquiz_bank = null;
-
-async function loadSchema()
-{
-	const xsd_xquiz_HTML_url = "https://raw.githubusercontent.com/astrobit/xquiz/refs/heads/master/docs/xquiz-html-1.0.0.xsd";
-	try
-	{
-		const response = await fetch(xsd_xquiz_HTML_url);
-		if (!response.ok)
-		{
-			throw new Error(`Response status: ${response.status}`);
-		}
-
-		xsd_xquiz_HTML = await response.text();
-	} 
-	catch (error)
-	{
-		console.error(error.message);
-	}
-
-	const xsd_xquiz_bankL_url = "https://raw.githubusercontent.com/astrobit/xquiz/refs/heads/master/docs/xquiz-bank-2.0.0.xsd";
-	try
-	{
-		const response = await fetch(xsd_xquiz_bankL_url);
-		if (!response.ok)
-		{
-			throw new Error(`Response status: ${response.status}`);
-		}
-
-		xsd_xquiz_bank = await response.text();
-	} 
-	catch (error)
-	{
-		console.error(error.message);
-	}
-}
-loadSchema();
-
-
-function readBank(file)
-{
-	const reader = new FileReader();
-	reader.onload = function(e) {
-			const parser = new DOMParser();
-			//@@TODO: Validate the xml using the loaded schema.
-			// xmllint requires additional files that aren't readily available.
-/*			if (xsd_xquiz_HTML != null && xsd_xquiz_bank != null)
-			{
-				let lintObj = {
-					xml: e.target.result,
-					schema: [xsd_xquiz_HTML,xsd_xquiz_bank]
-				};
-				const validation = xmllint.validateXML(lintObj);
-				
-				if (validation.errors)
-				{
-					console.log(validation.errors);
-				}
-	//there were no errors.
-			}*/
-			
-			const doc = parser.parseFromString(e.target.result, 'text/xml');
-			if (doc.getElementsByTagName("parsererror").length > 0)
-				console.error(doc.getElementsByTagName("parsererror")[0]);
-			const bankElement = doc.children[0]; // get top level element of the bank
-			g_Banks[bankElement.id] = {xml: bankElement, tokenized: new TokenElement(bankElement)};
-			displayBank(bankElement.id);
-		}
-	reader.readAsText(file);
-}
-
