@@ -621,5 +621,126 @@ class quiz_instance
 	}
 };
 
+let xsd_xquiz_HTML = null;
+let xsd_xquiz_bank = null;
+let xsd_xquiz_quiz = null;
+let xsd_xquiz_quiz_instance = null;
+
+async function loadSchema()
+{
+	const xsd_xquiz_HTML_url = "https://raw.githubusercontent.com/astrobit/xquiz/refs/heads/master/docs/xquiz-html-1.0.0.xsd";
+	try
+	{
+		const response = await fetch(xsd_xquiz_HTML_url);
+		if (!response.ok)
+		{
+			throw new Error(`Response status: ${response.status}`);
+		}
+
+		xsd_xquiz_HTML = await response.text();
+	} 
+	catch (error)
+	{
+		console.error(error.message);
+	}
+
+	const xsd_xquiz_bank_url = "https://raw.githubusercontent.com/astrobit/xquiz/refs/heads/master/docs/xquiz-bank-2.0.0.xsd";
+	try
+	{
+		const response = await fetch(xsd_xquiz_bank_url);
+		if (!response.ok)
+		{
+			throw new Error(`Response status: ${response.status}`);
+		}
+
+		xsd_xquiz_bank = await response.text();
+	} 
+	catch (error)
+	{
+		console.error(error.message);
+	}
+	const xsd_xquiz_quiz_url = "https://raw.githubusercontent.com/astrobit/xquiz/refs/heads/master/docs/xquiz-2.0.0.xsd";
+	try
+	{
+		const response = await fetch(xsd_xquiz_quiz_url);
+		if (!response.ok)
+		{
+			throw new Error(`Response status: ${response.status}`);
+		}
+
+		xsd_xquiz_quiz = await response.text();
+	} 
+	catch (error)
+	{
+		console.error(error.message);
+	}
+	const xsd_xquiz_quiz_instance_url = "https://raw.githubusercontent.com/astrobit/xquiz/refs/heads/master/docs/xquiz-instance-1.0.0.xsd";
+	try
+	{
+		const response = await fetch(xsd_xquiz_quiz_instance_url);
+		if (!response.ok)
+		{
+			throw new Error(`Response status: ${response.status}`);
+		}
+
+		xsd_xquiz_quiz_instance = await response.text();
+	} 
+	catch (error)
+	{
+		console.error(error.message);
+	}
+}
+loadSchema();
+
+
+function readFile(file)
+{
+	const reader = new FileReader();
+	reader.onload = function(e) {
+			const parser = new DOMParser();
+			//@@TODO: Validate the xml using the loaded schema.
+			// xmllint requires additional files that aren't readily available.
+/*			if (xsd_xquiz_HTML != null && xsd_xquiz_bank != null)
+			{
+				let lintObj = {
+					xml: e.target.result,
+					schema: [xsd_xquiz_HTML,xsd_xquiz_bank]
+				};
+				const validation = xmllint.validateXML(lintObj);
+				
+				if (validation.errors)
+				{
+					console.log(validation.errors);
+				}
+	//there were no errors.
+			}*/
+			
+			
+			const doc = parser.parseFromString(e.target.result, 'text/xml');
+			if (doc.getElementsByTagName("parsererror").length > 0)
+				console.error(doc.getElementsByTagName("parsererror")[0]);
+			const rootElement = doc.children[0]; // get top level element of the bank
+			if (rootElement instanceof HTMLCollection || rootElement instanceof Element)
+			{
+				if (rootElement.tagName == "bank")
+				{
+					g_Banks[rootElement.id] = {xml: rootElement, tokenized: new TokenElement(rootElement)};
+					displayBank(rootElement.id);
+				}
+				else if (rootElement.tagname == "xq:activity")
+				{
+					g_Quizzes[rootElement.id] = {xml: rootElement, tokenized: new TokenElement(rootElement)};
+					displayQuiz(rootElement.id);
+				}
+				else if (rootElement.tagname == "xqi:activity")
+				{
+					g_Quiz_Instances[rootElement.id] = {xml: rootElement, tokenized: new TokenElement(rootElement)};
+					displayQuizInstance(rootElement.id);
+				}
+			}
+		}
+	reader.readAsText(file);
+}
+
 
 
